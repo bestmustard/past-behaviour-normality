@@ -46,7 +46,7 @@ options(scipen=999.99, digits =7)
 
 
 # load our dataset 
-data <- read.csv("../data/experiment1.csv", header = TRUE, stringsAsFactors = FALSE, fileEncoding = "UTF-8-BOM")
+data <- read.csv("../../inputs/data/experiment1.csv", header = TRUE, stringsAsFactors = FALSE, fileEncoding = "UTF-8-BOM")
 str(data)
 
 #Show demographics
