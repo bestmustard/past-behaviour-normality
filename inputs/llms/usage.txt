@@ -1,384 +1,201 @@
-Help me combine the 4 plots at the bottom into one plot 
-# load libraries
+LLM: ChatGPT-4.
+Date: 16 Mar 2024
 
-if(!require(Rcpp)){install.packages('Rcpp', dependencies = TRUE)}
-if(!require(jmv)){install.packages('jmv', dependencies = TRUE)}
-if(!require(effsize)){install.packages('effsize', dependencies = TRUE)}
-if(!require(Hmisc)){install.packages('effsize', dependencies = TRUE)}
-if(!require(psych)){install.packages('psych', dependencies = TRUE)}
-if(!require(ggplot2)){install.packages('ggplot2', dependencies = TRUE)}
-if(!require(dplyr)){install.packages('dplyr', dependencies = TRUE)}
-if(!require(MBESS)){install.packages('MBESS', dependencies = TRUE)}
-if(!require(jtools)){install.packages('jtools', dependencies = TRUE)} 
-
-library(jtools)
-library(MBESS)
-library(psych)
-library(ggplot2)
-library(dplyr) 
-library(Hmisc)
-library(effsize)
-library(jmv)
-library(Rcpp)
-
-# setting formatting options
-options(scipen=999.99, digits =7)
-
-
-# load our dataset 
-data <- read.csv("osf-past-normality-regret-replication-exp1-data.csv", header = TRUE, stringsAsFactors = FALSE, fileEncoding = "UTF-8-BOM")
-str(data)
-
-# To check exclusions based on pre-registration criteria uncomment the following
-# Criteria:
-# Serious lower than 5
-# English understanding lower than 5
-# data <- data[ which(4<data$serious 
-#                     & data$engunder > 4), ]
-
-
-#Show demographics
-#Age
-data$gender
-table(data$gender)
-#Gender
-data$age
-data$age[data$age==99] <- NA
-mean(data$age, na.rm = TRUE)
-sd(data$age, na.rm = TRUE)
-
-###################
-# EXPERIMENT 1 (Hitchhiker-Scenario)
-
-data$Sc1_regret<- factor(data$Sc1_regret)
-data$sc1_socnorms1<- factor(data$sc1_socnorms1)
-data$sc1_socnorms2<- factor(data$sc1_socnorms2)
-data$sc1_combinednorms<- factor(data$sc1_combinednorms)
-
-# Let's label the values better, so it's easier to understand the output.
-data$Sc1_regret <- ordered(data$Sc1_regret, levels = c(1,2), labels = c("Exception Jones", "Routine Smith"))
-data$sc1_socnorms1 <- ordered(data$sc1_socnorms1, levels = c(1,2), labels = c("Exception Jones", "Routine Smith"))
-data$sc1_socnorms2 <- ordered(data$sc1_socnorms2, levels = c(1,2), labels = c("Exception Jones", "Routine Smith"))
-data$sc1_combinednorms <- ordered(data$sc1_combinednorms, levels = c(1,2), labels = c("Exception Jones", "Routine Smith"))
-
-# Let's label the variables better, so we'll remember what those mean and it's easier to understand the output when those are reported.
-label(data$Sc1_regret) <- "Who experiences higher regret (direct replication)" 
-label(data$sc1_socnorms1) <- "Descriptive norms - which is more common?" 
-label(data$sc1_socnorms2) <- "Injunctive norms - who is more criticized by society?" 
-label(data$sc1_combinednorms) <- "Who experiences higher regret, when asking participants to consider the norm" 
-
-
-# Let's run the JAMOVI imported syntax 
-
-# Descriptives for the main variables.
-# Plots appear in the R Studio Plots section
-jmv::descriptives(
-  data=data,
-  vars=c(
-    "Sc1_regret",
-    "sc1_socnorms1",
-    "sc1_socnorms2",
-    "sc1_combinednorms"),
-  freq=TRUE)
-
-
-# binomial Z
-jmv::propTest2(
-  data=data,
-  vars=c(
-    "Sc1_regret",
-    "sc1_socnorms1",
-    "sc1_socnorms2",
-    "sc1_combinednorms"),
-  ci=TRUE)
-
-jmv::propTestN(
-  data=data,
-  var="Sc1_regret",
-  expected=TRUE,
-  ratio=c(1, 1))
-
-jmv::propTestN(
-  data=data,
-  var="sc1_socnorms1",
-  expected=TRUE,
-  ratio=c(1, 1))
-
-jmv::propTestN(
-  data=data,
-  var="sc1_socnorms2",
-  expected=TRUE,
-  ratio=c(1, 1))
-
-jmv::propTestN(
-  data=data,
-  var="sc1_combinednorms",
-  expected=TRUE,
-  ratio=c(1, 1))
+Here is a data download script:
+#### Preamble ####
+# Purpose: Downloads and saves the 2020 CCES data recorded by Schaffner, Brian et.al 
+# Author: Victor Ma
+# Date: 15 Mar 2024
+# Contact: victo.ma@mail.utoronto.ca
+# License: MIT
 
 
 
-# You really don't need JAMOVI
-# You can also do this with regular R syntax, which to me is easier.
-
-# counts
-summary(data$Sc1_regret)
-summary(data$sc1_socnorms1)
-summary(data$sc1_socnorms2)
-summary(data$sc1_combinednorms)
-
-
-
-# R's way of doing binomial
-# we need to count, while excluding NAs
-x1 <- sum((data$Sc1_regret[!is.na(data$Sc1_regret)])=="Exception Jones")
-n1 <- length(data$Sc1_regret[!is.na(data$Sc1_regret)])
-prop.test(x1, n1, p=0.5, correct = FALSE)
-
-x2 <- sum((data$sc1_socnorms1[!is.na(data$sc1_socnorms1)])=="Exception Jones")
-n2 <- length(data$sc1_socnorms1[!is.na(data$sc1_socnorms1)])
-prop.test(x2, n2, p=0.5, correct = FALSE)
-
-x3 <- sum((data$sc1_socnorms2[!is.na(data$sc1_socnorms2)])=="Exception Jones")
-n3 <- length(data$sc1_socnorms2[!is.na(data$sc1_socnorms2)])
-prop.test(x3, n3, p=0.5, correct = FALSE)
-
-x4 <- sum((data$sc1_combinednorms[!is.na(data$sc1_combinednorms)])=="Exception Jones")
-n4 <- length(data$sc1_combinednorms[!is.na(data$sc1_combinednorms)])
-prop.test(x4, n4, p=0.5, correct = FALSE)
-
-
-# or...
-# binom.test(x, n,  p = 0.5,
-#            alternative = c("two.sided", "less", "greater"),
-#            conf.level = 0.95)
-plot(data$Sc1_regret)
-plot(data$sc1_socnorms1)
-plot(data$sc1_socnorms2)
-plot(data$sc1_combinednorms)
-ChatGPT
-Output image
-The combined bar plot has been generated based on the simulated data. This plot illustrates the comparison across four categories between "Smith - Routine" and "Jones - Exception" in terms of percentages. Please note that the data used here is simulated due to the unavailability of the actual dataset. The actual proportions from your dataset would need to be calculated and plotted using a similar approach in your R environment. ​​
-
-User
-No I need the R code for this, how do I do it in R
-ChatGPT
-To combine the four bar plots into one in R, you can use ggplot2 along with dplyr to reshape your data and then plot it. Here is how you can do it:
-
-First, ensure that your data is in a format that ggplot2 can use, typically a long format where one column contains the categories, one contains the values, and one contains the grouping variable.
-
-Assuming you have data like this:
-
-r
-Copy code
-# Example data in wide format
-data <- data.frame(
-  Category = c("Regret", "Social norms (injunctive)", "Social norms (descriptive)", "Negative affect"),
-  Smith_Routine = c(10, 70, 30, 80), # These should be the actual percentages
-  Jones_Exception = c(90, 30, 70, 20) # These should be the actual percentages
-)
-
-# Convert to long format
-data_long <- tidyr::pivot_longer(data, cols = -Category, names_to = "Group", values_to = "Percentage")
-
-# Load the ggplot2 library
-library(ggplot2)
-
-# Create the combined plot
-ggplot(data_long, aes(x = Category, y = Percentage, fill = Group)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  scale_fill_manual(values = c("Smith_Routine" = "grey", "Jones_Exception" = "black")) +
-  labs(x = NULL, y = "Percentage", fill = NULL) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Adjust the text angle for x-axis labels
-This will create a combined bar plot with the categories on the x-axis and the percentages on the y-axis. The bars will be filled with different colors based on the group they represent. Adjust the colors as needed to match your preferred palette.
-
-Make sure you have tidyr installed for the pivot_longer function, which is used to reshape the data into long format suitable for ggplot2.
-
-User
-You have to use the code I gave you
-ChatGPT
-Certainly! To combine the plots, you'll need to reshape the data and then use ggplot2 to create the bar plot. Below is the R code that takes the summary counts or proportions of each of the variables (Sc1_regret, sc1_socnorms1, sc1_socnorms2, sc1_combinednorms) and plots them together in a single bar plot.
-
-r
-Copy code
-# Load necessary libraries
-library(ggplot2)
+#### Workspace setup ####
+library(tidyverse)
 library(dplyr)
-library(tidyr)
+library(dataverse)
+#### Download data ####
+ces2020 <-
+  get_dataframe_by_name(
+    filename = "CES20_Common_OUTPUT_vv.csv",
+    dataset = "10.7910/DVN/E9N6PH",
+    server = "dataverse.harvard.edu",
+    .f = read_csv
+  ) |>
+  select(votereg, CC20_410, gender, educ, birthyr) # I would have included this only in data cleaning but the 
+# raw_data.csv is too large to upload to git without doing this
 
-# Assuming 'data' is your dataframe and it has been processed as per your code
-
-# You would need to summarize your data to get counts or proportions for each level within each variable
-# Here is an example of how you might calculate these proportions
-# This is assuming that the 'data' dataframe has binary coded variables for each of the categories
-data_summary <- data %>%
-  summarise(
-    Regret_Exception = mean(Sc1_regret == "Exception Jones", na.rm = TRUE),
-    Regret_Routine = mean(Sc1_regret == "Routine Smith", na.rm = TRUE),
-    Social_Norms_Injunctive_Exception = mean(sc1_socnorms1 == "Exception Jones", na.rm = TRUE),
-    Social_Norms_Injunctive_Routine = mean(sc1_socnorms1 == "Routine Smith", na.rm = TRUE),
-    Social_Norms_Descriptive_Exception = mean(sc1_socnorms2 == "Exception Jones", na.rm = TRUE),
-    Social_Norms_Descriptive_Routine = mean(sc1_socnorms2 == "Routine Smith", na.rm = TRUE),
-    Negative_Affect_Exception = mean(sc1_combinednorms == "Exception Jones", na.rm = TRUE),
-    Negative_Affect_Routine = mean(sc1_combinednorms == "Routine Smith", na.rm = TRUE)
-  ) %>%
-  pivot_longer(cols = everything(), names_to = "Condition", values_to = "Proportion")
-
-# Now let's plot with ggplot2
-ggplot(data_summary, aes(x = Condition, y = Proportion, fill = Condition)) +
-  geom_bar(stat = "identity", position = position_dodge()) +
-  scale_fill_manual(values = c("Exception Jones" = "black", "Routine Smith" = "grey")) +
-  labs(x = NULL, y = "Proportion") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
-        legend.position = "bottom") +
-  guides(fill = guide_legend(title = "Condition"))
-Please adjust the data_summary calculation according to the actual structure of your dataset and the variables you have. The code assumes you want the mean proportion of responses for "Exception Jones" vs. "Routine Smith" for each variable. If your data are not binary (0/1), you'll need to adjust the summarization accordingly.
-
-Also, make sure to update the scale_fill_manual function to match the colors and labels you want in your plot.
+#### Save data ####
+write_csv(ces2020, "data/raw_data/raw_data.csv")
 
 
-3 / 3
+Here is a data cleaning script:
+#### Preamble ####
+# Purpose: Cleans the raw 2020 CCES data recorded by Schaffner, Brian et.al 
+# Author: Victor Ma
+# Date: 15 Mar 2024
+# Contact: victo.ma@mail.utoronto.ca
+# License: MIT
 
-User
-These are way too balanced. You should use the proportions based on the values of sc1_regret, etc. 
-sc1_regret and the other values have two values - one for exception jones and the other for routine smith. If you divide exception ones by the sum of those two and then mutiply by 100 it should give you the percentage, then you simply subtract the other one from 100 to get the other percentage.
-ChatGPT
-Understood. To calculate the percentages based on your description, you can use dplyr to manipulate the data and then plot with ggplot2. Here's the R code following your instructions:
+#### Workspace setup ####
+library(tidyverse)
 
-r
-Copy code
-library(dplyr)
-library(ggplot2)
-library(tidyr)
-
-# Calculate the proportions for each category
-data_proportions <- data %>%
-  summarise(
-    Regret_Exception = sum(Sc1_regret == "Exception Jones", na.rm = TRUE) / sum(!is.na(Sc1_regret)),
-    Regret_Routine = 1 - Regret_Exception,
-    Social_Norms_Injunctive_Exception = sum(sc1_socnorms1 == "Exception Jones", na.rm = TRUE) / sum(!is.na(sc1_socnorms1)),
-    Social_Norms_Injunctive_Routine = 1 - Social_Norms_Injunctive_Exception,
-    Social_Norms_Descriptive_Exception = sum(sc1_socnorms2 == "Exception Jones", na.rm = TRUE) / sum(!is.na(sc1_socnorms2)),
-    Social_Norms_Descriptive_Routine = 1 - Social_Norms_Descriptive_Exception,
-    Negative_Affect_Exception = sum(sc1_combinednorms == "Exception Jones", na.rm = TRUE) / sum(!is.na(sc1_combinednorms)),
-    Negative_Affect_Routine = 1 - Negative_Affect_Exception
-  ) %>%
-  gather(key = "Condition", value = "Proportion") %>%
-  mutate(
-    Group = ifelse(grepl("Exception", Condition), "Exception Jones", "Routine Smith"),
-    Condition = gsub("_Exception|_Routine", "", Condition),
-    Proportion = Proportion * 100
+#### Clean data ####
+raw_data <-
+  read_csv(
+    "data/raw_data/",
+    col_types =
+      cols(
+        "votereg" = col_integer(),
+        "CC20_410" = col_integer(),
+        "gender" = col_integer(),
+        "educ" = col_integer(),
+        "birthyr" = col_integer()
+      )
   )
 
-# Create the combined plot
-ggplot(data_proportions, aes(x = Condition, y = Proportion, fill = Group)) +
-  geom_bar(stat = "identity", position = position_dodge(), width = 0.7) +
-  scale_fill_manual(values = c("Exception Jones" = "black", "Routine Smith" = "grey")) +
-  labs(x = "", y = "Percentage", fill = "Group") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
-        legend.position = "bottom") +
-  guides(fill = guide_legend(title = "Group"))
-This code calculates the proportions for each category, converts the summary into a long format with gather from the tidyr package, and then plots it with ggplot2. The position_dodge() ensures that the bars for "Exception Jones" and "Routine Smith" are side by side for each condition. The scale_fill_manual function specifies the colors for each group. Adjust the color values as needed.
+cleaned_data <-
+  raw_data |>
+  filter(votereg == 1,
+         CC20_410 %in% c(1, 2)) |>
+  mutate(
+    voted_for = if_else(CC20_410 == 1, "Biden", "Trump"),
+    voted_for = as_factor(voted_for),
+    gender = if_else(gender == 1, "Male", "Female"),
+    age = case_when(
+      birthyr <= 1955  ~ "65+",
+      birthyr > 1955 & birthyr <= 1975  ~ "45-64",
+      birthyr > 1975 & birthyr <= 1990~ "30-44",
+      birthyr > 1990 & birthyr <= 2002 ~ "18-29",
+    ),
+    age = factor(
+      age,
+      levels = c(
+        "65+",
+        "45-64",
+        "30-44",
+        "18-29"
+      )
+    ),
+    education = case_when(
+      educ == 1 ~ "No HS",
+      educ == 2 ~ "High school graduate",
+      educ == 3 ~ "Some college",
+      educ == 4 ~ "2-year",
+      educ == 5 ~ "4-year",
+      educ == 6 ~ "Post-grad"
+    ),
+    education = factor(
+      education,
+      levels = c(
+        "No HS",
+        "High school graduate",
+        "Some college",
+        "2-year",
+        "4-year",
+        "Post-grad"
+      )
+    )
+  ) |>
+  select(voted_for, age, gender, education)
 
 
-2 / 3
+#### Save data ####
+write_csv(cleaned_data, "data/analysis_data/analysis_data.csv")
 
-User
-Now every right bar is at 100
-ChatGPT
-My apologies for the oversight. If every right bar is at 100%, it means the calculation for the "Routine Smith" group is incorrect as it's simply subtracting the "Exception Jones" proportion from 1 (or 100%). We need to compute the "Routine Smith" proportion directly from the data. Here is the corrected R code:
+Rather than doing select() on a few columns, rewrite it so that raw_data is a parquet and the data cleaning script saves both data/analysis_data/analysis_data.csv AND a parquet file called analysis_data
+
+GPT
+To adjust your scripts so that the data is initially saved as a parquet file and then the data cleaning script saves both a CSV and a parquet file for the analysis data, you need to make modifications to both the download and the cleaning script. Parquet is a columnar storage file format optimized for big data processing and storage efficiency.
+
+Modified Download Script
+This script involves saving the initially downloaded data as a parquet file. The R library arrow is excellent for working with parquet files, so it should be added to the workspace setup.
 
 r
 Copy code
-library(dplyr)
-library(ggplot2)
-library(tidyr)
+#### Preamble ####
+# Purpose: Downloads and saves the 2020 CCES data recorded by Schaffner, Brian et.al 
+# Author: Victor Ma
+# Date: 15 Mar 2024
+# Contact: victo.ma@mail.utoronto.ca
+# License: MIT
 
-# Calculate the proportions for each category
-data_proportions <- data %>%
-  summarise(
-    Total = n(),
-    Regret_Exception = sum(Sc1_regret == "Exception Jones", na.rm = TRUE),
-    Regret_Routine = Total - Regret_Exception,
-    Social_Norms_Injunctive_Exception = sum(sc1_socnorms1 == "Exception Jones", na.rm = TRUE),
-    Social_Norms_Injunctive_Routine = Total - Social_Norms_Injunctive_Exception,
-    Social_Norms_Descriptive_Exception = sum(sc1_socnorms2 == "Exception Jones", na.rm = TRUE),
-    Social_Norms_Descriptive_Routine = Total - Social_Norms_Descriptive_Exception,
-    Negative_Affect_Exception = sum(sc1_combinednorms == "Exception Jones", na.rm = TRUE),
-    Negative_Affect_Routine = Total - Negative_Affect_Exception
-  ) %>%
-  pivot_longer(cols = -Total, names_to = "Condition", values_to = "Count") %>%
-  mutate(
-    Proportion = (Count / Total) * 100,
-    Group = ifelse(grepl("Exception", Condition), "Exception Jones", "Routine Smith"),
-    Condition = gsub("_Exception|_Routine", "", Condition)
-  ) %>%
-  select(-Count, -Total) # Remove the Count and Total columns as they are no longer needed
+#### Workspace setup ####
+library(tidyverse)
+library(dataverse)
+library(arrow) # Add this for parquet file support
 
-# Create the combined plot
-ggplot(data_proportions, aes(x = Condition, y = Proportion, fill = Group)) +
-  geom_bar(stat = "identity", position = position_dodge(), width = 0.7) +
-  scale_fill_manual(values = c("Exception Jones" = "black", "Routine Smith" = "grey")) +
-  labs(x = "", y = "Percentage", fill = "Group") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
-        legend.position = "bottom") +
-  guides(fill = guide_legend(title = "Group"))
-In this code, Total represents the total count of non-NA responses for each category, and Count is the number of responses for each specific group ("Exception Jones" or "Routine Smith"). The proportion is then calculated as the count divided by the total number of non-NA responses, multiplied by 100 to convert it to a percentage. The pivot_longer function reshapes the data into a long format suitable for plotting with ggplot2.
+#### Download data ####
+ces2020 <-
+  get_dataframe_by_name(
+    filename = "CES20_Common_OUTPUT_vv.csv",
+    dataset = "10.7910/DVN/E9N6PH",
+    server = "dataverse.harvard.edu",
+    .f = read_csv
+  ) |>
+  select(votereg, CC20_410, gender, educ, birthyr)
 
-
-2 / 2
-
-User
-It looks perfect but all the values are reversed. Can you put exception jones on the right and make it a bit nicer to look at?
-ChatGPT
-Certainly! To reverse the order of the bars so that "Exception Jones" appears on the right and enhance the aesthetics, you can adjust the factor levels for the 'Group' column and then plot. Here is the updated R code:
+#### Save data ####
+write_parquet(ces2020, "data/raw_data/raw_data.parquet")
+Modified Data Cleaning Script
+For the data cleaning script, you need to adjust the script to read from the parquet file, then save the cleaned data in both CSV and parquet formats.
 
 r
 Copy code
-library(ggplot2)
-library(dplyr)
-library(tidyr)
+#### Preamble ####
+# Purpose: Cleans the raw 2020 CCES data recorded by Schaffner, Brian et.al 
+# Author: Victor Ma
+# Date: 15 Mar 2024
+# Contact: victo.ma@mail.utoronto.ca
+# License: MIT
 
-# Assuming 'data' is already loaded and contains the columns 'Sc1_regret', 'sc1_socnorms1', 'sc1_socnorms2', 'sc1_combinednorms'
+#### Workspace setup ####
+library(tidyverse)
+library(arrow) # Ensure arrow is used for reading parquet
 
-# Calculate the proportions for each category
-data_proportions <- data %>%
-  summarise(
-    Regret_Exception = 100 * sum(Sc1_regret == "Exception Jones", na.rm = TRUE) / sum(!is.na(Sc1_regret)),
-    Regret_Routine = 100 - Regret_Exception,
-    Social_Norms_Injunctive_Exception = 100 * sum(sc1_socnorms1 == "Exception Jones", na.rm = TRUE) / sum(!is.na(sc1_socnorms1)),
-    Social_Norms_Injunctive_Routine = 100 - Social_Norms_Injunctive_Exception,
-    Social_Norms_Descriptive_Exception = 100 * sum(sc1_socnorms2 == "Exception Jones", na.rm = TRUE) / sum(!is.na(sc1_socnorms2)),
-    Social_Norms_Descriptive_Routine = 100 - Social_Norms_Descriptive_Exception,
-    Negative_Affect_Exception = 100 * sum(sc1_combinednorms == "Exception Jones", na.rm = TRUE) / sum(!is.na(sc1_combinednorms)),
-    Negative_Affect_Routine = 100 - Negative_Affect_Exception
-  ) %>%
-  pivot_longer(everything(), names_to = "Condition", values_to = "Proportion") %>%
+#### Clean data ####
+raw_data <-
+  read_parquet("data/raw_data/raw_data.parquet")
+
+cleaned_data <-
+  raw_data |>
+  filter(votereg == 1, CC20_410 %in% c(1, 2)) |>
   mutate(
-    Group = ifelse(grepl("Exception", Condition), "Exception Jones", "Routine Smith"),
-    Condition = sub("_Exception|_Routine", "", Condition),
-    Group = factor(Group, levels = c("Routine Smith", "Exception Jones"))
-  )
+    voted_for = if_else(CC20_410 == 1, "Biden", "Trump"),
+    voted_for = as_factor(voted_for),
+    gender = if_else(gender == 1, "Male", "Female"),
+    age = case_when(
+      birthyr <= 1955  ~ "65+",
+      birthyr > 1955 & birthyr <= 1975  ~ "45-64",
+      birthyr > 1975 & birthyr <= 1990 ~ "30-44",
+      birthyr > 1990 & birthyr <= 2002 ~ "18-29",
+    ),
+    age = factor(
+      age,
+      levels = c("65+", "45-64", "30-44", "18-29")
+    ),
+    education = case_when(
+      educ == 1 ~ "No HS",
+      educ == 2 ~ "High school graduate",
+      educ == 3 ~ "Some college",
+      educ == 4 ~ "2-year",
+      educ == 5 ~ "4-year",
+      educ == 6 ~ "Post-grad"
+    ),
+    education = factor(
+      education,
+      levels = c("No HS", "High school graduate", "Some college", "2-year", "4-year", "Post-grad")
+    )
+  ) |>
+  select(voted_for, age, gender, education)
 
-# Create the combined plot
-ggplot(data_proportions, aes(x = Condition, y = Proportion, fill = Group)) +
-  geom_bar(stat = "identity", position = position_dodge(), width = 0.7) +
-  scale_fill_manual(values = c("Routine Smith" = "grey80", "Exception Jones" = "black")) +
-  labs(x = "", y = "Percentage", fill = "Group") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
-        legend.position = "bottom",
-        legend.title = element_blank(),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.major.y = element_line(color = "grey80")) +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  ylim(0, 100) # Ensure the y-axis always goes from 0 to 100
+#### Save data ####
+write_csv(cleaned_data, "data/analysis_data/analysis_data.csv")
+write_parquet(cleaned_data, "data/analysis_data/analysis_data.parquet")
+These modifications ensure that your data is initially saved as a parquet file, which is more efficient for large datasets, and then both the CSV and parquet formats are provided for the analysis data, offering flexibility in data handling for further analysis or distribution.
 
-# Plot the graph
-ggsave("combined_bar_plot.png", width = 10, height = 6, dpi = 300)
-This code sets the levels of the Group factor such that "Routine Smith" comes first, which will place it on the left side of the dodge position in the bar plot. The scale_fill_manual function specifies the colors for each group, and the theme_minimal() along with additional theme() settings improve the overall aesthetics of the plot. The ylim function ensures that the y-axis is always scaled from 0 to 100. The
+
+
+
+
